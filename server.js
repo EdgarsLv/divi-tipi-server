@@ -45,7 +45,7 @@ app.post("/create-checkout-session", async (req, res) => {
       customer,
       locale: "lv",
       payment_method_types: ["card"],
-      success_url: `${domainURL}/page2?session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${domainURL}/page2`,
       cancel_url: `${domainURL}`,
     });
 
@@ -147,6 +147,20 @@ app.post("/cancel-subscription", async (req, res) => {
   }
 });
 
+app.post("/test-url", (req, res) => {
+  try {
+    console.log("req", req.body);
+    return res.status(200).json({});
+  } catch (e) {
+    res.status(400);
+    console.log(e.message);
+    return res.send({
+      error: {
+        message: e.message,
+      },
+    });
+  }
+});
 // sub_1MiilxBMJFV3kDeeb4keC3GM
 
 app.post("/webhook", express.raw({ type: "application/json" }), (req, res) => {
