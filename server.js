@@ -1,7 +1,7 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-import { stripe } from "./service/index.js";
+import { stripe, supabase } from "./service/index.js";
 import {
   createOrRetrieveCustomer,
   manageSubstriptionStatusChange,
@@ -147,10 +147,13 @@ app.post("/cancel-subscription", async (req, res) => {
   }
 });
 
-app.post("/test-url", (req, res) => {
+app.post("/test-url", async (req, res) => {
   try {
+    await supabase.from("test_table").insert({ test_data: req.body });
+
     console.log("req", req.body);
-    return res.status(200).json({});
+
+    return res.status(200).json({ data: req.body });
   } catch (e) {
     res.status(400);
     console.log(e.message);
