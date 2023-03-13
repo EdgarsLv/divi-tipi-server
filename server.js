@@ -45,8 +45,8 @@ app.post("/create-checkout-session", async (req, res) => {
       customer,
       locale: "lv",
       payment_method_types: ["card"],
-      success_url: `${domainURL}/page2`,
-      cancel_url: `${domainURL}`,
+      success_url: `${domainURL}/subscription`,
+      cancel_url: `${domainURL}/subscriptions`,
     });
 
     return res.status(200).json({ url: session.url });
@@ -87,7 +87,7 @@ app.post("/customer-portal", async (req, res) => {
     //       },
     //     },
     //     business_profile: {
-    //       headline: "Divi Tipi bla bla bla",
+    //       headline: "Par stipru un saderīgu draudzību - Tavi Divi Tipi",
     //     },
     //   }
     // );
@@ -95,7 +95,7 @@ app.post("/customer-portal", async (req, res) => {
     const portalSession = await stripe.billingPortal.sessions.create({
       customer,
       locale: "lv",
-      return_url: `${domainURL}/page2`,
+      return_url: `${domainURL}/subscription`,
       configuration: "bpc_1MiPz0BMJFV3kDeez9KrnTdp",
     });
 
@@ -112,10 +112,10 @@ app.post("/customer-portal", async (req, res) => {
 });
 
 app.post("/delete-customer", async (req, res) => {
-  const { customerId } = req.body;
+  const { stripe_customer_id } = req.body.old_record;
 
   try {
-    await stripe.customers.del(customerId);
+    await stripe.customers.del(stripe_customer_id);
 
     return res.status(200).json({});
   } catch (e) {
@@ -147,24 +147,11 @@ app.post("/cancel-subscription", async (req, res) => {
   }
 });
 
-app.post("/test-url", async (req, res) => {
-  try {
-    await supabase.from("test_table").insert({ test_data: req.body });
-
-    console.log("req", req.body);
-
-    return res.status(200).json({ data: req.body });
-  } catch (e) {
-    res.status(400);
-    console.log(e.message);
-    return res.send({
-      error: {
-        message: e.message,
-      },
-    });
-  }
-});
-// sub_1MiilxBMJFV3kDeeb4keC3GM
+const relevantEvents = new Set([
+  "customer.subscription.created",
+  "customer.subscription.updated",
+  "customer.subscription.deleted",
+]);
 
 app.post("/webhook", express.raw({ type: "application/json" }), (req, res) => {
   let data;
@@ -197,24 +184,29 @@ app.post("/webhook", express.raw({ type: "application/json" }), (req, res) => {
     eventType = req.body.type;
   }
 
-  switch (eventType) {
-    case "checkout.session.completed":
-      //   console.log("session", data);
-      // Payment is successful and the subscription is created.
-      break;
-    case "customer.subscription.created":
-    case "customer.subscription.updated":
-    case "customer.subscription.deleted":
-      const subscription = data.object;
-      manageSubstriptionStatusChange(subscription.id, subscription.customer);
-      break;
+  if (relevantEvents.has(eventType))
+    try {
+      switch (eventType) {
+        case "customer.subscription.created":
+        case "customer.subscription.updated":
+        case "customer.subscription.deleted":
+          const subscription = data.object;
+          manageSubstriptionStatusChange(
+            subscription.id,
+            subscription.customer
+          );
+          break;
 
-    case "customer.created":
-      console.log("customer created", data);
-      break;
-    default:
-    // Unhandled event type
-  }
+        default:
+          throw new Error("Unhandled relevant event");
+          break;
+      }
+    } catch (error) {
+      console.log(error);
+      return res
+        .status(400)
+        .send('Webhook error: "Webhook handler failed. View logs."');
+    }
 
   res.sendStatus(200);
 });

@@ -34,35 +34,34 @@ export const manageSubstriptionStatusChange = async (
   customerId
 ) => {
   try {
-    console.log("manage");
-    // const { data: customerData, error: noCustomerError } = await supabase
-    //   .from("customers")
-    //   .select("id")
-    //   .eq("stripe_customer_id", customerId)
-    //   .single();
+    const { data: customerData, error: noCustomerError } = await supabase
+      .from("customers")
+      .select("id")
+      .eq("stripe_customer_id", customerId)
+      .single();
 
-    // if (noCustomerError) throw noCustomerError;
+    if (noCustomerError) throw noCustomerError;
 
-    // const { id: uuid } = customerData;
+    const { id: uuid } = customerData;
 
-    // const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
 
-    // const { error } = await supabase.from("subscriptions").upsert({
-    //   id: subscription.id,
-    //   user_id: uuid,
-    //   price_id: subscription.items.data[0].price.id
-    //   status: subscription.status,
-    //   created: toDateTime(subscription.created).toISOString(),
-    //   period_start: getTimeValue(subscription.current_period_start),
-    //   period_end: getTimeValue(subscription.current_period_end),
-    //   trial_start: getTimeValue(subscription.trial_start),
-    //   trial_end: getTimeValue(subscription.trial_end),
-    //   cancel_at: getTimeValue(subscription.cancel_at),
-    //   canceled_at: getTimeValue(subscription.canceled_at),
-    // });
-    // if (error) {
-    //   throw error;
-    // }
+    const { error } = await supabase.from("subscriptions").upsert({
+      id: subscription.id,
+      user_id: uuid,
+      price_id: subscription.items.data[0].price.id,
+      status: subscription.status,
+      created: getTimeValue(subscription.created),
+      period_start: getTimeValue(subscription.current_period_start),
+      period_end: getTimeValue(subscription.current_period_end),
+      trial_start: getTimeValue(subscription.trial_start),
+      trial_end: getTimeValue(subscription.trial_end),
+      cancel_at: getTimeValue(subscription.cancel_at),
+      canceled_at: getTimeValue(subscription.canceled_at),
+    });
+    if (error) {
+      throw error;
+    }
   } catch (e) {
     console.log("upsert", e.message);
   }
