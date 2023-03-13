@@ -199,7 +199,6 @@ app.post("/webhook", express.raw({ type: "application/json" }), (req, res) => {
 
         default:
           throw new Error("Unhandled relevant event");
-          break;
       }
     } catch (error) {
       console.log(error);

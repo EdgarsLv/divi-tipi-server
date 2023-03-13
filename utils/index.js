@@ -46,19 +46,23 @@ export const manageSubstriptionStatusChange = async (
 
     const subscription = await stripe.subscriptions.retrieve(subscriptionId);
 
-    const { error } = await supabase.from("subscriptions").upsert({
-      id: subscription.id,
-      user_id: uuid,
-      price_id: subscription.items.data[0].price.id,
-      status: subscription.status,
-      created: getTimeValue(subscription.created),
-      period_start: getTimeValue(subscription.current_period_start),
-      period_end: getTimeValue(subscription.current_period_end),
-      trial_start: getTimeValue(subscription.trial_start),
-      trial_end: getTimeValue(subscription.trial_end),
-      cancel_at: getTimeValue(subscription.cancel_at),
-      canceled_at: getTimeValue(subscription.canceled_at),
-    });
+    const { error } = await supabase.from("subscriptions").upsert(
+      {
+        id: subscription.id,
+        user_id: uuid,
+        price_id: subscription.items.data[0].price.id,
+        status: subscription.status,
+        created: getTimeValue(subscription.created),
+        period_start: getTimeValue(subscription.current_period_start),
+        period_end: getTimeValue(subscription.current_period_end),
+        trial_start: getTimeValue(subscription.trial_start),
+        trial_end: getTimeValue(subscription.trial_end),
+        cancel_at: getTimeValue(subscription.cancel_at),
+        canceled_at: getTimeValue(subscription.canceled_at),
+      },
+      { onConflict: "user_id" }
+    );
+
     if (error) {
       throw error;
     }
